@@ -142,12 +142,11 @@ $ esptool --chip esp8266 --port /dev/ttyUSB0 --baud 115200 write_flash 0xEB000 M
 (If you have installed the Arduino software, esptool can also be called with `python3 ~/.arduino15/packages/esp8266/hardware/esp8266/3.1.2/tools/esptool/esptool.py`)
 
 ### Compiling and flashing from the source code with the Arduino software:
-Setting up the Arduino software: (it might work with newer versions, these are just the versions we developed things on)
-Install Arudino: https://www.arduino.cc/en/software (Version 1.8.19)
-Install Boardmanager: http://arduino.esp8266.com/stable/package_esp8266com_index.json (Version 3.0.2) [Generic ESP8266 module]
-(under 'file/preferences' add the path to "Additional Boards Manager URLs:", then close the dialog with okay, and select the board on "Tools / boardmanager")
-Install WifiManager: https://github.com/tzapu/WifiManager (version 2.0.5-beta)
-(Download the file, and add it to your libraries with Sketch/Include Library/Add. Zip library)
+Setting up the Arduino software (it might work with newer versions, these are just the versions we developed things on):
+- Install [Arduino](https://www.arduino.cc/en/software) (version 1.8.19)
+- Install ESP8266 (version 3.1.2 (3.0.2) on the boards manager (under 'File>Preferences' add `http://arduino.esp8266.com/stable/package_esp8266com_index.json` to "Additional Boards Manager URLs:", then close the dialog with okay and install the esp8266 library in boards manager, then and select the board on "Tools>Board>ESP8266 Boards>Generic ESP8266 Module")
+- Install [WifiManager](https://github.com/tzapu/WifiManager) (version 2.0.17 but dev was done with 2.0.5-beta): Use menu Tools>Manage Libraries...
+- Install [WebSockets](https://github.com/Links2004/arduinoWebSockets) by Markus Sattler (version 2.7.2)
 
 Then close the application, reopen it and load the ino file.
 
