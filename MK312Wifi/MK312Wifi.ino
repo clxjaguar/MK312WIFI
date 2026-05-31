@@ -17,6 +17,8 @@
 
 #define UDP_DISCOVERY_PORT 8842 // UDP port to listen to, so devices can find the interface by sending a broadcast packet
 #define COMM_PORT          8843 // main communication port in TCP
+#define WEBSERVER_PORT       80 // serving a page with a simple javascript websocket client
+#define WEBSOCKETSRV_PORT    81 // simple websocket server, the port should match what is used in the js code
 
 #define LED_PIN               1 // radio LED of the mk312 (we use TX, since the system will output garbage on start, and we do not want to confuse the mk312)
 #define RX_PIN                0 // rx pin to be used by the software implementation
@@ -454,8 +456,8 @@ void handleUDP() {
 
 #define CONFIG_LITTLEFS_SPIFFS_COMPAT 1
 
-ESP8266WebServer webserver(80);
-WebSocketsServer websocketserver(81);
+ESP8266WebServer webserver(WEBSERVER_PORT);
+WebSocketsServer websocketserver(WEBSOCKETSRV_PORT);
 
 void webservers_setup() {
   webserver.on("/EXEC", handleHttpGetEXEC);
