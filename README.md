@@ -193,6 +193,10 @@ Implemented commands are:
 | CutLevels   | 1 to set both channels levels to zero       |
 | MultiAdjust | 0 to 100 (scaled in the current mode range) |
 
+Starting with firmware version 1.2.06, it is possible to give mode name instead of
+hexadecimal values. Currents levels, MA, ADC override state, battery level and
+MK312Wifi version number are also sent to websocket clients at each new connection.
+
 ## Bonus picture of a MK312 with the v1.1 WiFi bridge interface in the grass
 
 ![MK312BT with WiFi interface in the grass](media/mk312_grass.jpg)
