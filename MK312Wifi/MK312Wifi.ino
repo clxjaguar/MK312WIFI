@@ -535,10 +535,11 @@ String getContentType(String filename){
 
 void websocketevent(uint8_t num, WStype_t type, uint8_t * payload, size_t length) {
   if(type == WStype_CONNECTED) {
-    handleLedBlinking(0, true);
+    handleLedBlinking(0, true); // radio LED is now lit
     IPAddress ip = websocketserver.remoteIP(num);
     String message = ip.toString() + String(" connected.");
     websocketserver.broadcastTXT(message);
+    websocket_broadcast_levels_and_mode();
   }
 
   if (type == WStype_TEXT) {
@@ -564,6 +565,23 @@ void websocketevent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
     String res = websocket_parse_cmd(key, val);
     websocketserver.broadcastTXT(res);
   }
+}
+
+void websocket_broadcast_levels_and_mode() {
+  int mode         = peeker(0x407b);
+  int adc_disabled = peeker(0x400f);
+  int battery_lvl  = peeker(0x4063);
+  int rangeLevel   = peeker(0x41f4);
+  int ma_min       = peeker(0x4086); // eg. 15, right position
+  int ma_max       = peeker(0x4087); // eg. 127, left position
+  int ma_val       = peeker(0x420d); // raw value needing scaling
+  int ma_scaled    = (ma_max-ma_val) / (0.01 * (float)(ma_max-ma_min));
+  int levelA       = peeker(0x4064);
+  int levelB       = peeker(0x4065);
+  char buf[200];
+  sprintf(buf, "Mode=0x%02x DisableADC=%d Range=%d LevelA=%d LevelB=%d MultiAdjust=%d Batt=%d Ver=%s", mode, adc_disabled, rangeLevel, levelA, levelB, ma_scaled, battery_lvl, VERSION);
+  websocketserver.broadcastTXT(buf);
+  sendLevelsFlag = false;
 }
 
 String websocket_parse_cmd(String cmd, String val) {
