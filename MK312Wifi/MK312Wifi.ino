@@ -685,6 +685,10 @@ String websocket_parse_cmd(String cmd, String val) {
     poker(0x4070,0x4);
     poker(0x4070,0x12); // execute mode
   }
+  else if (cmd == "Batt?") {
+    int battery_lvl  = peeker(0x4063);
+    return String()+"Batt="+battery_lvl;
+  }
   else {
     goto err;
   }
