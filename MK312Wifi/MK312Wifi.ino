@@ -533,6 +533,7 @@ String getContentType(String filename){
     return "text/plain";
 }
 
+bool sendLevelsFlag = false;
 void websocketevent(uint8_t num, WStype_t type, uint8_t * payload, size_t length) {
   if(type == WStype_CONNECTED) {
     handleLedBlinking(0, true); // radio LED is now lit
@@ -564,6 +565,12 @@ void websocketevent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
     // parse, then send response to all connected clients
     String res = websocket_parse_cmd(key, val);
     websocketserver.broadcastTXT(res);
+
+    if (sendLevelsFlag) {
+      delay(50);
+      res = get_levels_string();
+      websocketserver.broadcastTXT(res);
+    }
   }
 }
 
@@ -717,6 +724,7 @@ void cutLevels(bool enabled) {
 }
 
 String get_levels_string() {
+  sendLevelsFlag = false;
   int ma_min       = peeker(0x4086); // eg. 15, right position
   int ma_max       = peeker(0x4087); // eg. 127, left position
   int ma_val       = peeker(0x420d);
@@ -728,6 +736,9 @@ String get_levels_string() {
 
 void enableADC(bool enabled) {
   poker(0x400f, enabled?0x00:0x01);
+  if (enabled) {
+    sendLevelsFlag = true;
+  }
 }
 
 int str2hex(const char str[]) {
