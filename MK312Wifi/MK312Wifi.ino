@@ -685,6 +685,9 @@ String websocket_parse_cmd(String cmd, String val) {
     poker(0x4070,0x4);
     poker(0x4070,0x12); // execute mode
   }
+  else if (cmd == "Levels?") {
+    return get_levels_string();
+  }
   else if (cmd == "Batt?") {
     int battery_lvl  = peeker(0x4063);
     return String()+"Batt="+battery_lvl;
@@ -711,6 +714,16 @@ void cutLevels(bool enabled) {
   else {
     enableADC(true);
   }
+}
+
+String get_levels_string() {
+  int ma_min       = peeker(0x4086); // eg. 15, right position
+  int ma_max       = peeker(0x4087); // eg. 127, left position
+  int ma_val       = peeker(0x420d);
+  int ma_scaled    = (ma_max-ma_val) / (0.01 * (float)(ma_max-ma_min));
+  int levelA       = peeker(0x4064);
+  int levelB       = peeker(0x4065);
+  return String()+"LevelA="+levelA+" LevelB="+levelB+" MultiAdjust="+ma_scaled;
 }
 
 void enableADC(bool enabled) {

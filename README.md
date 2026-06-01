@@ -192,6 +192,7 @@ Implemented commands are:
 | startRamp   | No argument needed for this command         |
 | CutLevels   | 1 to set both channels levels to zero       |
 | MultiAdjust | 0 to 100 (scaled in the current mode range) |
+| Levels?     | Return current A and B levels and MA)       |
 | Batt?       | Return current battery level register value |
 
 Starting with firmware version 1.2.06, it is possible to give mode name instead of
