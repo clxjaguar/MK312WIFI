@@ -519,7 +519,7 @@ void handleHttpGetBase(bool raw) {
       poker(str2hex(cmd.c_str()), str2hex(val.c_str())); res="OK";
     }
     else {
-      res = websocket_parse_cmd(cmd, val) ?"OK":"ERR";
+      res = websocket_parse_cmd(cmd, val);
     }
   }
 
@@ -560,26 +560,69 @@ void websocketevent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
       }
     }
 
-    // send response to all connected clients
-    String res = key;
-    if (val != "") { res+="="+val; }
-    res+= websocket_parse_cmd(key, val) ?" OK":" ERR";
+    // parse, then send response to all connected clients
+    String res = websocket_parse_cmd(key, val);
     websocketserver.broadcastTXT(res);
   }
 }
 
-bool websocket_parse_cmd(String cmd, String val) {
-  // todo: validate input vals
-  // todo: possibility to read the current values
-  // todo: websockets client should handle broadcasted messages to them
-  if (cmd == "startRamp")        poker(0x4070, 0x21);
-  else if(cmd == "CutLevels")    cutLevels(val.toInt());
-  else if(cmd == "EnableADC")    enableADC(val.toInt());
-  else if(cmd == "DisableADC")   enableADC(!val.toInt());
-  else if(cmd == "LevelA")       poker(0x4064, val.toInt());
-  else if(cmd == "LevelB")       poker(0x4065, val.toInt());
-  else if(cmd == "MultiAdjust") {
+String websocket_parse_cmd(String cmd, String val) {
+  String res = cmd;
+  if (val != "") { res+="="+val; }
+
+  if (cmd == "startRamp") {
+    poker(0x4070, 0x21);
+  }
+  else if (cmd == "CutLevels") {
+    int valInt = 1;
+    if (val != "") {
+      if (!isDigit(val[0])) { goto err; }
+      valInt = val.toInt();
+    }
+    else {
+      res="=1";
+    }
+    cutLevels(valInt);
+  }
+  else if (cmd == "EnableADC") {
+    int valInt = 1;
+    if (val != "") {
+      if (!isDigit(val[0])) { goto err; }
+      valInt = val.toInt();
+    }
+    else {
+      res+="=1";
+    }
+    enableADC(valInt);
+  }
+  else if (cmd == "DisableADC") {
+    int valInt = 1;
+    if (val != "") {
+      if (!isDigit(val[0])) { goto err; }
+      valInt = val.toInt();
+    }
+    else {
+      res+="=1";
+    }
+    enableADC(!valInt);
+  }
+  else if (cmd == "LevelA") {
+    if (!isDigit(val[0])) { goto err; }
+    int valInt = val.toInt();
+    if (valInt < 0) { goto err; }
+    if (valInt > 255) { goto err; }
+    poker(0x4064, valInt);
+  }
+  else if (cmd == "LevelB") {
+    if (!isDigit(val[0])) { goto err; }
+    int valInt = val.toInt();
+    if (valInt < 0) { goto err; }
+    if (valInt > 255) { goto err; }
+    poker(0x4065, valInt);
+  }
+  else if (cmd == "MultiAdjust") {
     //  multiadust_scaled based on minimal and maximal ranges values
+    if (!isDigit(val[0])) { goto err; }
     int ma_min = peeker(0x4086); // eg. 15, right position
     int ma_max = peeker(0x4087); // eg. 127, left position;
     int ma_newval = ma_max - (val.toFloat() * 0.01 * (float)(ma_max - ma_min));
@@ -593,11 +636,16 @@ bool websocket_parse_cmd(String cmd, String val) {
     poker(0x4070,0x12); // execute mode
   }
   else {
-    return false;
+    goto err;
   }
 
+  res+=" OK";
   handleLedBlinking(3, true);
-  return true;
+  return res;
+
+  err:
+  res+=" ERR";
+  return res;
 }
 
 void cutLevels(bool enabled) {
