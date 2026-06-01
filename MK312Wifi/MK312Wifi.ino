@@ -630,8 +630,40 @@ String websocket_parse_cmd(String cmd, String val) {
     else if (ma_newval < ma_min) ma_newval = ma_min;
     poker(0x420d, ma_newval);
   }
-  else if(cmd == "Mode") {
-    poker(0x407b,str2hex(val.c_str()));
+  else if (cmd == "Mode") {
+    if (val.startsWith("0x")) {
+      poker(0x407b, str2hex(val.c_str()));
+    }
+    else {
+      int m = 0;
+      if      (val=="Waves")   { m=0x76; }
+      else if (val=="Stroke")  { m=0x77; }
+      else if (val=="Climb")   { m=0x78; }
+      else if (val=="Combo")   { m=0x79; }
+      else if (val=="Intense") { m=0x7a; }
+      else if (val=="Rhythm")  { m=0x7b; }
+      else if (val=="Audio1")  { m=0x7c; }
+      else if (val=="Audio2")  { m=0x7d; }
+      else if (val=="Audio3")  { m=0x7e; }
+      else if (val=="Split")   { m=0x7f; }
+      else if (val=="Random1") { m=0x80; }
+      else if (val=="Random2") { m=0x81; }
+      else if (val=="Toggle")  { m=0x82; }
+      else if (val=="Orgasm")  { m=0x83; }
+      else if (val=="Torment") { m=0x84; }
+      else if (val=="Phase1")  { m=0x85; }
+      else if (val=="Phase2")  { m=0x86; }
+      else if (val=="Phase3")  { m=0x87; }
+      else if (val=="User1")   { m=0x88; }
+      else if (val=="User2")   { m=0x89; }
+      else if (val=="User3")   { m=0x8a; }
+      else if (val=="User4")   { m=0x8b; }
+      else if (val=="User5")   { m=0x8c; }
+      else if (val=="User6")   { m=0x8d; }
+      else if (val=="User7")   { m=0x8e; }
+      else { goto err; }
+      poker(0x407b, m);
+    }
     poker(0x4070,0x4);
     poker(0x4070,0x12); // execute mode
   }
