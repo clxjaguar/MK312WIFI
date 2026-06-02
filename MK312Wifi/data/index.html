@@ -3,36 +3,86 @@
 	<head>
 		<meta charset="UTF-8">
 		<title>MK312-BT</title>
-		<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
 		<link rel="stylesheet" href="style.css">
 	</head>
 	<body>
 		<div id="help"><p>
-			This is the WebSocket interface. For more advanced control of the MK-312, you can use a GUI using direct connection like <a href="https://github.com/cLxJaguar/mk312-gui/">this one</a>. More information on the <a href="https://github.com/Rangarig/MK312WIFI/">MK312Wifi project page</a>. The WebSocket interface also can be used as a more standard way in third party softwares. Have fun! (<a class="underlined" onclick="closeHelp()">hide this</a>)</p>
+			This is the WebSocket interface. For more advanced control of the MK-312, you can use a GUI using direct connection like <a href="https://github.com/cLxJaguar/mk312-gui/" target="_blank">this one</a>. More information on the <a href="https://github.com/Rangarig/MK312WIFI/" target="_blank">MK312Wifi project page</a>. The WebSocket interface also can be used as a more standard way in third party softwares. Have fun! (<a class="underlined" onclick="closeHelp()">hide this</a>)</p>
 		</div>
 
 		<div class="shower">
-			<p id="titleDecoration">MK312 Remote Control<a id="interrog" onclick="displayHelp()">?</a></p>
+			<span id="titleDecoration">
+				<span class="leftZone">
+					<span id="levelRange"></span>
+				</span>
+				<span>MK312 Remote Control</span>
+				<span class="rightZone">
+					<span id="battery">
+						<span id="batteryFill" style="75%"></span>
+						<span id="batteryText">---</span>
+					</span>
+					<span id="interrog" onclick="displayHelp()">?</span>
+				</span>
+			</span>
 			<div id="Sliders" class="slidersContainer">
+				<div id="status">&nbsp;</div>
 				<div id="topButtons" class="submenu">
 					<span name="DisableADC" id="DisableADC" class="toggleButton">Override<br>Levels</span>
-					<span name="CutLevels" id="CutLevels" class="toggleButton">Cut<br>Levels</span>
 					<span name="startRamp" id="startRamp" class="clickButton">Start<br>Ramp</span>
+					<span id="showLevelsButtons" class="toggleButton">Levels<br>Buttons</span>
+					<span name="CutLevels" id="CutLevels" class="toggleButton">Cut<br>Levels</span>
 				</div>
 
-				<div class="rangeBlock">
-					Channel A Level<br><input type="range" id="LevelA" class="range" step="1" value="0" min="0" max="255" onchange="levels(this, this.value)">
-					<p id="rangeValue" class="rangeValue"></p>
-				</div>
+				<div id="levelsSlidersBlock">
+					<div class="rangeBlock">
+						Channel A Level:
+						<span id="LevelAIndicator">---</span>
+						<br><input type="range" id="LevelA" class="range" step="1" value="0" min="0" max="255">
+					</div>
 
-				<div class="rangeBlock">
-					Channel B Level<br><input type="range" id="LevelB" class="range" step="1" value="0" min="0" max="255" onchange="levels(this, this.value)">
-					<p id="rangeValue2" class="rangeValue"></p>
+					<div class="rangeBlock">
+						Channel B Level:
+						<span id="LevelBIndicator">---</span>
+						<br><input type="range" id="LevelB" class="range" step="1" value="0" min="0" max="255">
+					</div>
 				</div>
+				<div id="levelsButtonsBlock">
+					<div id="levelsSpansWrapper">
+						<span class="levelSpan">
+							<div>
+								<span class="levelLabelBtnMode">A Level:</span>
+								<span id="levelAIndicator2" class="levelIndicatorBtnMode">??</span>
+								<span class="levelLabelBtnMode">%</span>
+							</div>
+							<div>
+								<span id="decrementA" class="levelButton">&minus;</span>
+								<span id="incrementA" class="levelButton">&plus;</span>
+							</div>
+						</span>
+						<span class="levelSpan">
+							<div>
+								<span class="levelLabelBtnMode">B Level:</span>
+								<span id="levelBIndicator2" class="levelIndicatorBtnMode">??</span>
+								<span class="levelLabelBtnMode">%</span>
+							</div>
+							<div>
+								<span id="decrementB" class="levelButton">&minus;</span>
+								<span id="incrementB" class="levelButton">&plus;</span>
+							</div>
+						</span>
+					</div>
+					<div class="rangeBlock">
+						Level Increment:
+						<span id="levelIncrementIndicator">---</span>
+						<br><input type="range" id="levelIncrement" class="range" step="1" value="7" min="1" max="26"">
+					</div>
 
+				</div>
 				<div class="rangeBlock">
-					Multi Adjust<br><input type="range" id="MultiAdjust" class="range" step="1" value="50" min="0" max="100" onchange="levels(this, this.value)">
-					<p id="rangeValue3" class="rangeValue"></p>
+					Multi Adjust:
+					<span id="MultiAdjustIndicator">---</span>
+					<br><input type="range" id="MultiAdjust" class="range" step="1" value="0" min="0" max="100">
 				</div>
 			</div>
 		</div>

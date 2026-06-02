@@ -180,6 +180,12 @@ https://www.youtube.com/watch?v=7g6v_m208LQ
 ### Using the web and websocket interface:
 There is a websocket server running on port 81, for simple control. Message format is `<command>=<argument>`. A HTTP webserver on port 80 is also serving html/css/js page using it, but also responding to GET requests `/EXEC?cmd=<command>&val=<argument>` or `/RAW?cmd=<address>&val=<byte>`.
 
+The embedded web interface is optimized to be used on a smartphone:
+
+![Screen capture of the web interface, buttons mode and levels cuts](media/web_interface_levels_buttons.png)
+
+![Screen capture of the web interface](media/web_interface.png)
+
 Implemented commands are:
 
 | Command     | Argument                                    |
