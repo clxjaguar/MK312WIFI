@@ -12,11 +12,13 @@
 #include <FS.h>
 #include <LittleFS.h>
 
-#define VERSION 1.2.05
+#define VERSION "1.2.06"
 #define AP_NAME "MK312CONFIG-AP"
 
 #define UDP_DISCOVERY_PORT 8842 // UDP port to listen to, so devices can find the interface by sending a broadcast packet
 #define COMM_PORT          8843 // main communication port in TCP
+#define WEBSERVER_PORT       80 // serving a page with a simple javascript websocket client
+#define WEBSOCKETSRV_PORT    81 // simple websocket server, the port should match what is used in the js code
 
 #define LED_PIN               1 // radio LED of the mk312 (we use TX, since the system will output garbage on start, and we do not want to confuse the mk312)
 #define RX_PIN                0 // rx pin to be used by the software implementation
@@ -454,8 +456,8 @@ void handleUDP() {
 
 #define CONFIG_LITTLEFS_SPIFFS_COMPAT 1
 
-ESP8266WebServer webserver(80);
-WebSocketsServer websocketserver(81);
+ESP8266WebServer webserver(WEBSERVER_PORT);
+WebSocketsServer websocketserver(WEBSOCKETSRV_PORT);
 
 void webservers_setup() {
   webserver.on("/EXEC", handleHttpGetEXEC);
@@ -517,7 +519,7 @@ void handleHttpGetBase(bool raw) {
       poker(str2hex(cmd.c_str()), str2hex(val.c_str())); res="OK";
     }
     else {
-      res = websocket_parse_cmd(cmd, val) ?"OK":"ERR";
+      res = websocket_parse_cmd(cmd, val);
     }
   }
 
@@ -531,12 +533,14 @@ String getContentType(String filename){
     return "text/plain";
 }
 
+bool sendLevelsFlag = false;
 void websocketevent(uint8_t num, WStype_t type, uint8_t * payload, size_t length) {
   if(type == WStype_CONNECTED) {
-    handleLedBlinking(0, true);
+    handleLedBlinking(0, true); // radio LED is now lit
     IPAddress ip = websocketserver.remoteIP(num);
     String message = ip.toString() + String(" connected.");
     websocketserver.broadcastTXT(message);
+    websocket_broadcast_levels_and_mode();
   }
 
   if (type == WStype_TEXT) {
@@ -558,26 +562,92 @@ void websocketevent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
       }
     }
 
-    // send response to all connected clients
-    String res = key;
-    if (val != "") { res+="="+val; }
-    res+= websocket_parse_cmd(key, val) ?" OK":" ERR";
+    // parse, then send response to all connected clients
+    String res = websocket_parse_cmd(key, val);
     websocketserver.broadcastTXT(res);
+
+    if (sendLevelsFlag) {
+      delay(50);
+      res = get_levels_string();
+      websocketserver.broadcastTXT(res);
+    }
   }
 }
 
-bool websocket_parse_cmd(String cmd, String val) {
-  // todo: validate input vals
-  // todo: possibility to read the current values
-  // todo: websockets client should handle broadcasted messages to them
-  if (cmd == "startRamp")        poker(0x4070, 0x21);
-  else if(cmd == "CutLevels")    cutLevels(val.toInt());
-  else if(cmd == "EnableADC")    enableADC(val.toInt());
-  else if(cmd == "DisableADC")   enableADC(!val.toInt());
-  else if(cmd == "LevelA")       poker(0x4064, val.toInt());
-  else if(cmd == "LevelB")       poker(0x4065, val.toInt());
-  else if(cmd == "MultiAdjust") {
+void websocket_broadcast_levels_and_mode() {
+  int mode         = peeker(0x407b);
+  int adc_disabled = peeker(0x400f);
+  int battery_lvl  = peeker(0x4063);
+  int rangeLevel   = peeker(0x41f4);
+  int ma_min       = peeker(0x4086); // eg. 15, right position
+  int ma_max       = peeker(0x4087); // eg. 127, left position
+  int ma_val       = peeker(0x420d); // raw value needing scaling
+  int ma_scaled    = (ma_max-ma_val) / (0.01 * (float)(ma_max-ma_min));
+  int levelA       = peeker(0x4064);
+  int levelB       = peeker(0x4065);
+  char buf[200];
+  sprintf(buf, "Mode=0x%02x DisableADC=%d Range=%d LevelA=%d LevelB=%d MultiAdjust=%d Batt=%d Ver=%s", mode, adc_disabled, rangeLevel, levelA, levelB, ma_scaled, battery_lvl, VERSION);
+  websocketserver.broadcastTXT(buf);
+  sendLevelsFlag = false;
+}
+
+String websocket_parse_cmd(String cmd, String val) {
+  String res = cmd;
+  if (val != "") { res+="="+val; }
+
+  if (cmd == "startRamp") {
+    poker(0x4070, 0x21);
+  }
+  else if (cmd == "CutLevels") {
+    int valInt = 1;
+    if (val != "") {
+      if (!isDigit(val[0])) { goto err; }
+      valInt = val.toInt();
+    }
+    else {
+      res="=1";
+    }
+    cutLevels(valInt);
+  }
+  else if (cmd == "EnableADC") {
+    int valInt = 1;
+    if (val != "") {
+      if (!isDigit(val[0])) { goto err; }
+      valInt = val.toInt();
+    }
+    else {
+      res+="=1";
+    }
+    enableADC(valInt);
+  }
+  else if (cmd == "DisableADC") {
+    int valInt = 1;
+    if (val != "") {
+      if (!isDigit(val[0])) { goto err; }
+      valInt = val.toInt();
+    }
+    else {
+      res+="=1";
+    }
+    enableADC(!valInt);
+  }
+  else if (cmd == "LevelA") {
+    if (!isDigit(val[0])) { goto err; }
+    int valInt = val.toInt();
+    if (valInt < 0) { goto err; }
+    if (valInt > 255) { goto err; }
+    poker(0x4064, valInt);
+  }
+  else if (cmd == "LevelB") {
+    if (!isDigit(val[0])) { goto err; }
+    int valInt = val.toInt();
+    if (valInt < 0) { goto err; }
+    if (valInt > 255) { goto err; }
+    poker(0x4065, valInt);
+  }
+  else if (cmd == "MultiAdjust") {
     //  multiadust_scaled based on minimal and maximal ranges values
+    if (!isDigit(val[0])) { goto err; }
     int ma_min = peeker(0x4086); // eg. 15, right position
     int ma_max = peeker(0x4087); // eg. 127, left position;
     int ma_newval = ma_max - (val.toFloat() * 0.01 * (float)(ma_max - ma_min));
@@ -585,17 +655,61 @@ bool websocket_parse_cmd(String cmd, String val) {
     else if (ma_newval < ma_min) ma_newval = ma_min;
     poker(0x420d, ma_newval);
   }
-  else if(cmd == "Mode") {
-    poker(0x407b,str2hex(val.c_str()));
+  else if (cmd == "Mode") {
+    if (val.startsWith("0x")) {
+      poker(0x407b, str2hex(val.c_str()));
+    }
+    else {
+      int m = 0;
+      if      (val=="Waves")   { m=0x76; }
+      else if (val=="Stroke")  { m=0x77; }
+      else if (val=="Climb")   { m=0x78; }
+      else if (val=="Combo")   { m=0x79; }
+      else if (val=="Intense") { m=0x7a; }
+      else if (val=="Rhythm")  { m=0x7b; }
+      else if (val=="Audio1")  { m=0x7c; }
+      else if (val=="Audio2")  { m=0x7d; }
+      else if (val=="Audio3")  { m=0x7e; }
+      else if (val=="Split")   { m=0x7f; }
+      else if (val=="Random1") { m=0x80; }
+      else if (val=="Random2") { m=0x81; }
+      else if (val=="Toggle")  { m=0x82; }
+      else if (val=="Orgasm")  { m=0x83; }
+      else if (val=="Torment") { m=0x84; }
+      else if (val=="Phase1")  { m=0x85; }
+      else if (val=="Phase2")  { m=0x86; }
+      else if (val=="Phase3")  { m=0x87; }
+      else if (val=="User1")   { m=0x88; }
+      else if (val=="User2")   { m=0x89; }
+      else if (val=="User3")   { m=0x8a; }
+      else if (val=="User4")   { m=0x8b; }
+      else if (val=="User5")   { m=0x8c; }
+      else if (val=="User6")   { m=0x8d; }
+      else if (val=="User7")   { m=0x8e; }
+      else { goto err; }
+      poker(0x407b, m);
+    }
     poker(0x4070,0x4);
     poker(0x4070,0x12); // execute mode
   }
+  else if (cmd == "Levels?") {
+    return get_levels_string();
+  }
+  else if (cmd == "Batt?") {
+    int battery_lvl  = peeker(0x4063);
+    return String()+"Batt="+battery_lvl;
+  }
   else {
-    return false;
+    goto err;
   }
 
+  res+=" OK";
   handleLedBlinking(3, true);
-  return true;
+  return res;
+
+  err:
+  res+=" ERR";
+  return res;
 }
 
 void cutLevels(bool enabled) {
@@ -609,8 +723,22 @@ void cutLevels(bool enabled) {
   }
 }
 
+String get_levels_string() {
+  sendLevelsFlag = false;
+  int ma_min       = peeker(0x4086); // eg. 15, right position
+  int ma_max       = peeker(0x4087); // eg. 127, left position
+  int ma_val       = peeker(0x420d);
+  int ma_scaled    = (ma_max-ma_val) / (0.01 * (float)(ma_max-ma_min));
+  int levelA       = peeker(0x4064);
+  int levelB       = peeker(0x4065);
+  return String()+"LevelA="+levelA+" LevelB="+levelB+" MultiAdjust="+ma_scaled;
+}
+
 void enableADC(bool enabled) {
   poker(0x400f, enabled?0x00:0x01);
+  if (enabled) {
+    sendLevelsFlag = true;
+  }
 }
 
 int str2hex(const char str[]) {
