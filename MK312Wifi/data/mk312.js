@@ -38,8 +38,12 @@ function initiateWebSocketConnection() {
 	if (window.location.hash != "") {
 		hostname = window.location.hash.substr(1); // for debugging purposes
 	}
-	else {
+	else if (window.location.hostname != "") {
 		hostname = window.location.hostname;
+	}
+	else {
+		hostname = prompt("Please the IP address of your MK312Wifi");
+		window.location = window.location+'#'+hostname;
 	}
 
 	try {
