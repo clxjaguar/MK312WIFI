@@ -38,12 +38,26 @@ function initiateWebSocketConnection() {
 	if (window.location.hash != "") {
 		hostname = window.location.hash.substr(1); // for debugging purposes
 	}
-	else {
+	else if (window.location.hostname != "") {
 		hostname = window.location.hostname;
 	}
+	else {
+		hostname = prompt("Please the IP address of your MK312Wifi");
+		window.location = window.location+'#'+hostname;
+	}
 
-	ws = new WebSocket('ws://' + hostname + ':81/');
-	statusElement.innerHTML+= "Connecting to "+hostname+"... ";
+	try {
+		ws = new WebSocket('ws://' + hostname + ':81/');
+		statusElement.innerHTML+= "Connecting to "+hostname+"... ";
+	}
+	catch (err) {
+		statusElement.innerHTML = err;
+		if (window.location.href.startsWith("https://")) {
+			window.location = window.location.href.replace("https://", "http://");
+		}
+		ws = null;
+		return;
+	}
 
 	ws.onclose = function () {
 		statusElement.innerHTML = "Connection closed. "
@@ -140,6 +154,8 @@ function parseBoxResponse(msg) {
 				else {
 					cutLevelsElement.state = false;
 					cutLevelsElement.style.background = '';
+					disableAdcElement.state = false;
+					disableAdcElement.style.background = '';
 				}
 				break;
 			case 'DisableADC':
