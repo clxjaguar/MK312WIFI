@@ -150,6 +150,8 @@ function parseBoxResponse(msg) {
 				else {
 					cutLevelsElement.state = false;
 					cutLevelsElement.style.background = '';
+					disableAdcElement.state = false;
+					disableAdcElement.style.background = '';
 				}
 				break;
 			case 'DisableADC':
