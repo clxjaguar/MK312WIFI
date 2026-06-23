@@ -42,8 +42,18 @@ function initiateWebSocketConnection() {
 		hostname = window.location.hostname;
 	}
 
-	ws = new WebSocket('ws://' + hostname + ':81/');
-	statusElement.innerHTML+= "Connecting to "+hostname+"... ";
+	try {
+		ws = new WebSocket('ws://' + hostname + ':81/');
+		statusElement.innerHTML+= "Connecting to "+hostname+"... ";
+	}
+	catch (err) {
+		statusElement.innerHTML = err;
+		if (window.location.href.startsWith("https://")) {
+			window.location = window.location.href.replace("https://", "http://");
+		}
+		ws = null;
+		return;
+	}
 
 	ws.onclose = function () {
 		statusElement.innerHTML = "Connection closed. "
