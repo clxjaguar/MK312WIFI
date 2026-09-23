@@ -12,7 +12,7 @@
 #include <FS.h>
 #include <LittleFS.h>
 
-#define VERSION "1.2.06"
+#define VERSION "1.2.07"
 #define AP_NAME "MK312CONFIG-AP"
 
 #define UDP_DISCOVERY_PORT 8842 // UDP port to listen to, so devices can find the interface by sending a broadcast packet
@@ -73,8 +73,12 @@ int mk312read() {
   return mySerial.read();
 }
 
+bool stopsOnBoxError = true; // Gives error codes with radio LED at startup
+
 // Flashes an error code until the end of time
 void errorstate(byte e) {
+  if (!stopsOnBoxError) return;
+
   while (true) {
     for (byte i=0;i<e;i++) {
       digitalWrite(LED_PIN, HIGH);   // turn the LED on
@@ -190,6 +194,7 @@ void mk312_setup() {
 
   // Store the encryption key for later use
   mk312key = boxkey ^ 0x55;
+  stopsOnBoxError = false;
 }
 
 void setup() {
