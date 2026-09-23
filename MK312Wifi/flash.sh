@@ -5,4 +5,4 @@ ARGS="--chip esp8266 --port $PORT --baud 115200"
 EXEC="esptool"
 $EXEC $ARGS write_flash 0x0 MK312Wifi.ino.bin || exit
 $EXEC $ARGS write_flash 0xEB000 MK312Wifi.mklittlefs.bin || exit
-beep
+echo -e '\a'
